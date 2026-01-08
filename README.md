@@ -72,9 +72,10 @@ This phase systematically disabled the "bridges" between the encoder and decoder
 ## 🛠️ Technologies and Tools
 
 * **Framework:** PyTorch (v2.x) - handling the computational graph and backpropagation.
-* **Optimization:** Adam Optimizer () for robust convergence.
+* **Optimization:** Adam Optimizer ($lr=1e-3, weight\_decay=1e-5$) for robust convergence.
 * **Loss Function:** MSE Loss used for binary segmentation tasks on synthetic data.
 * **Hardware:** NVIDIA CUDA acceleration for high-epoch training.
+* **Visualization:** Matplotlib for visual comparison of ground truth and predictions.
 
 ## 👥 Authors
 
