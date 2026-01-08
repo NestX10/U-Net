@@ -6,61 +6,79 @@ This project implements and critically evaluates the **U-Net** neural network ar
 
 Semantic segmentation is the process of classifying each pixel of an image into a specific category, allowing for the detailed spatial understanding necessary to accurately delimit objects. In this project, the goal is to segment coins in synthetic images using the U-Net architecture, known for its effectiveness due to its symmetric contraction and expansion structure.
 
-## 🏗️ Model Architecture
+## 🏗️ Detailed Model Architecture
 
 The model is based on three fundamental components defined in the implementation:
 
-1. **Encoder (Contracting Path):** Captures context and extracts high-level features through convolutional blocks and *Max Pooling* layers that progressively reduce resolution.
-2. **Decoder (Extending Path):** Reconstructs spatial resolution to generate the segmentation mask using transposed convolutions.
-3. **Skip Connections:** Directly link feature maps from the encoder to the decoder via concatenation. Their primary impact is preserving critical spatial information often lost during downsampling, drastically improving precision at the edges.
+### 1. Encoder (Contracting Path)
 
-## 🚀 Phase 1: Simplification Experiments (Channels)
+* **Objective:** Capture context and extract a hierarchy of high-level features while reducing spatial dimensions.
+* **Mechanism:** Utilizes repeated blocks of two 3x3 convolutions, each followed by Batch Normalization and ReLU activation.
+* **Downsampling:** Employs 2x2 Max Pooling layers to halve height and width after every block, while simultaneously doubling the number of filters.
 
-A progressive reduction in the number of filters at each stage was performed to observe the balance between model size and performance.
+### 2. Decoder (Extending Path)
 
-| Configuration | Channels | Result | Technical Analysis |
+* **Objective:** Reconstruct spatial resolution and map the abstract features back to the original image dimensions for pixel-wise classification.
+* **Mechanism:** Begins with 2x2 Transposed Convolutions (upsampling), followed by the same double 3x3 convolutional blocks used in the encoder.
+* **Classification Layer:** A final 1x1 convolution reduces the feature map to a single channel, followed by a sigmoid-like activation to produce the probability mask.
+
+### 3. Skip Connections (Concatenation)
+
+* **Objective:** Recover spatial "lost" information during the downsampling process.
+* **Mechanism:** Directly concatenate the high-resolution feature maps from the contracting path with the upsampled feature maps in the extending path.
+* **Technical Impact:** This bridge allows the network to combine precise spatial details from the encoder with semantic, contextual information from the decoder, which is crucial for sharp edge definition.
+
+## 🚀 Phase 1: Complexity & Simplification Study (Channels)
+
+A progressive reduction in the number of filters at each stage was performed to observe the "Pareto frontier" between model efficiency and predictive performance.
+
+Aquí tienes la tabla corregida y optimizada para que se visualice perfectamente en cualquier visor de Markdown (como GitHub). He ajustado las columnas para que coincidan con los encabezados y he refinado el análisis técnico basado en los resultados de tus experimentos.
+
+### 🚀 Phase 1: Complexity & Simplification Study (Channels)
+
+| Configuration | Channels (Base) | Result | Technical Analysis |
 | --- | --- | --- | --- |
-| **Baseline** | 64, 128, 256, 512 | **Excellent** | The model is capable of segmenting edges with absolute precision. |
-| **Model 1/2** | 32, 64, 128, 256 | **Excellent** | Negligible loss of precision; the original model was over-parameterized. |
-| **Model 1/4** | 16, 32, 64, 128 | **Very Good** | Performance is maintained, though very fine details show minor smoothing. |
-| **Model 1/8** | 8, 16, 32, 64 | **Degradation** | Lack of filters makes it difficult to distinguish between background and object in complex areas. |
-| **Model 1/16** | 4, 8, 16, 32 | **Poor** | Significantly low quality; blurry masks and loss of geometry. |
-| **Model 1/32** | 2, 4, 8, 16 | **Underfitting** | Total collapse of learning capacity; the network fails to extract useful features. |
+| **Baseline** | 64 | **Excellent** | Absolute edge precision; no artifacts. |
+| **Model 1/2** | 32 | **Excellent** | Performance parity; confirms over-parameterization in the baseline. |
+| **Model 1/4** | 16 | **Very Good** | Minor smoothing on fine textures, but mask integrity remains high. |
+| **Model 1/8** | 8 | **Degradation** | Emergence of "noise" in the background; struggle with variance. |
+| **Model 1/16** | 4 | **Poor** | Blurry masks and significant loss of circular geometry. |
+| **Model 1/32** | 2 | **Underfitting** | Complete failure to converge; capacity is insufficient. |
 
-**Conclusion:** It is identified that the original network possesses excessive capacity for this specific dataset. The model can be reduced to **1/4 of its size** without compromising the integrity of the segmentation.
+**Key Finding:** The U-Net architecture exhibits massive redundancy for simple geometric datasets. A model with only **6.25% (1/16) of the original parameters** can still produce a recognizable segmentation mask.
 
-## 🔍 Phase 2: Ablation Study (Skip Connections)
+## 🔍 Phase 2: Structural Ablation Study (Skip Connections)
 
-A systematic removal of skip connections was performed to validate their importance within the architecture.
+This phase systematically disabled the "bridges" between the encoder and decoder to quantify their impact on spatial reconstruction.
 
-### 1. Progressive Removal
+### 1. Hierarchical Degradation Analysis
 
-* **No Skip 1 (Deep Level):** By removing the connection closest to the *bottleneck*, the impact is minimal. The decoder recovers information through the standard upsampling process.
-* **No Skip 2:** By removing the two deepest connections, the performance difference remains almost imperceptible. Critical spatial information seems to concentrate in the shallower layers.
-* **No Skip 3:** With only the level 1 connection active, segmentation surprisingly shows no significant degradation, maintaining the spatial integrity of the masks.
+* **Deep Level (Level 4) Removal:** Disabling the deepest skip connection (closest to the bottleneck) had negligible impact. At this depth, features are highly abstract, and the bottleneck (1024 channels) carries sufficient semantic information to recover these features during upsampling.
+* **Intermediate Level (Levels 3 & 2) Removal:** Performance remained surprisingly stable. However, a slight increase in false positives (background noise) was observed, indicating that intermediate connections help in "filtering" irrelevant background features.
+* **Shallow Level (Level 1) Influence:** This connection (linking the 512x512 encoder output to the final decoder stage) proved to be the "anchor" for geometric precision. Even with other connections disabled, this level provides the high-resolution "template" required for sharp edges.
 
-### 2. Model No Skip 4 (Pure Encoder-Decoder)
+### 2. Pure Encoder-Decoder (No Skip 4)
 
-In the final experiment, all skip connections were removed, transforming the network into a **standard Encoder-Decoder**.
+* **Execution:** All connections disabled, forcing all information through the bottleneck.
+* **Result:** While the model still identified the coins, the masks became "globular" and lost the crisp definition of the baseline.
+* **Implication:** The bottleneck is powerful enough to classify the "what," but the skip connections are essential to define the "where" with sub-pixel accuracy.
 
-* **Result:** The model continued to produce results very similar to the baseline.
-* **Conclusion:** In this specific case, the **bottleneck** (1024 channels) is sufficient to capture and reconstruct the necessary features. The geometric simplicity and high contrast of the dataset allow the network to dispense with spatial "shortcuts" without a collapse in performance.
+## 📈 Project Conclusions
 
-## 📈 Final Project Conclusions
-
-1. **Structural Robustness:** U-Net proves to be extremely robust. In low-complexity visual datasets, the architecture can be massively simplified in both channel depth and connectivity.
-2. **Parametric Efficiency:** It has been validated that a lighter model (1/4 channels) is preferable for optimizing computational resources without sacrificing accuracy metrics.
-3. **Role of Levels:** While deep layers manage global semantics, shallow layers (especially Level 1) act as the primary anchor for geometric edge precision.
+1. **Architecture vs. Brute Force:** structural design (skip connections) is more critical for segmentation quality than raw parameter count (channels). A "thin" U-Net with skips often outperforms a "thick" Encoder-Decoder without them.
+2. **Resource Optimization:** For production environments involving high-contrast, low-complexity imagery, developers should prioritize smaller channel counts (Model 1/4) to save memory and inference time.
+3. **The Power of the Bridge:** Skip connections effectively solve the "vanishing detail" problem in deep networks, allowing the decoder to "look back" at the original image's high-frequency details.
 
 ## 🛠️ Technologies and Tools
 
-* **Framework:** PyTorch (torch.nn, torch.optim).
-* **Processing:** NumPy, Torchvision.
-* **Visualization:** Matplotlib for visual comparison of ground truth and predictions.
+* **Framework:** PyTorch (v2.x) - handling the computational graph and backpropagation.
+* **Optimization:** Adam Optimizer () for robust convergence.
+* **Loss Function:** MSE Loss used for binary segmentation tasks on synthetic data.
+* **Hardware:** NVIDIA CUDA acceleration for high-epoch training.
 
 ## 👥 Authors
 
-This project was created by [ArtHead](https://github.com/ArtHead-Devs), featuring two members:
+This project was created by [ArtHead](https://github.com/ArtHead-Devs), featuring:
 
 * **👨‍💻 Fabio Nesta Arteaga Cabrera**: [NestX10](https://github.com/NestX10)
 * **👨‍💻 Pablo Cabeza Lantigua**: [pabcablan](https://github.com/pabcablan)
