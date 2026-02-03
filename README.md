@@ -1,6 +1,17 @@
-# Semantic Segmentation with U-Net Architecture: Capacity and Ablation Analysis
+<div align="center">
 
-This project implements and critically evaluates the **U-Net** neural network architecture for semantic image segmentation. The work was developed as part of the **Machine Learning II** course at the **University of Las Palmas de Gran Canaria (ULPGC)**. Through a series of controlled experiments, we analyze the impact of the number of channels and the importance of skip connections on model accuracy.
+# 🔬 U-Net Semantic Segmentation
+
+### *Capacity and Ablation Analysis for Image Segmentation*
+
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org/)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue?style=for-the-badge)](LICENSE)
+
+*Critical evaluation of U-Net architecture for semantic image segmentation through controlled experiments analyzing channel capacity and skip connections.*
+
+</div>
 
 ## 📖 Task Introduction
 
@@ -86,4 +97,4 @@ This project was created by [ArtHead](https://github.com/ArtHead-Devs), featurin
 
 ## 📄 License
 
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](https://www.google.com/search?q=LICENSE) file for more details.
+This project is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for more details.
